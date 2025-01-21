@@ -1,0 +1,74 @@
+/* General Styles */
+body {
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	height: 100vh;
+	background-color: #282c34;
+	color: white;
+	font-family: Arial, sans-serif;
+}
+
+h1 {
+	margin-bottom: 20px;
+}
+
+/* Home Screen */
+#home-screen {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+}
+
+/* Play Button */
+#play-btn {
+	background-color: #4caf50;
+	color: white;
+	padding: 10px 20px;
+	border: none;
+	border-radius: 5px;
+	font-size: 18px;
+	cursor: pointer;
+}
+
+#play-btn:hover {
+	background-color: #45a049;
+}
+
+/* Game Area */
+#game-area {
+	position: relative;
+	width: 100vw;
+	height: 100vh;
+	background-color: #444;
+	overflow: hidden;
+	display: none; /* Hidden initially */
+}
+
+/* Player */
+#player {
+	position: absolute;
+	width: 104px;
+	height: 152px;
+	background-image: url('PlayerSkin.png'); /* Replace with your image URL */
+	background-size: cover; /* Ensures the image covers the entire square */
+	background-position: center; /* Centers the texture */
+	top: 50%; /* Start vertically centered */
+	left: 50%; /* Start horizontally centered */
+	transform: translate(-50%, -50%);
+}
+
+/* Show game area */
+#game-area.show {
+	display: block;
+}
+
+/* Hidden class for elements */
+#home-screen.hidden {
+	display: none;
+}
