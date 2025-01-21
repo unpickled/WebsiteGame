@@ -1,10 +1,23 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>My Website</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Game</title>
+	<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Welcome to My Website!</h1>
-    <p>This is a simple webpage hosted on GitHub.</p>
+	<!-- Home Screen -->
+	<div id="home-screen">
+		<h1>Game</h1>
+		<button id="play-btn">Play</button>
+	</div>
+
+	<!-- Game Area -->
+	<div id="game-area" class="hidden">
+		<div id="player"></div>
+	</div>
+
+	<script src="script.js"></script>
 </body>
 </html>
