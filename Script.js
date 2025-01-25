@@ -91,7 +91,6 @@ function gameLoop() {
 	// Reduce horizontal acceleration if the player is jumping
 	if (!canJump) {
         velocityX *= AIRRESISTANCE; // apply air resistance when in air
-
 		if (isMovingLeft) {
 			velocityX = Math.max(velocityX - (STEP * AIRACCELERATION), -0.8); // Move left, with velocity limit
 		}
@@ -115,9 +114,9 @@ function gameLoop() {
 
 	const playerRect = {
 		left: ((nextHorizontalPosition - 3.14) / 100) * gameArea.clientWidth,
-		right: ((nextHorizontalPosition + 3.14) / 100) * gameArea.clientWidth, // Adjust width as % of game area
-		top: (nextVerticalPosition / 100) * gameArea.clientHeight,
-		bottom: ((nextVerticalPosition + 10.42) / 100) * gameArea.clientHeight, // Adjust height as % of game area
+		right: ((nextHorizontalPosition + 3.14) / 100) * gameArea.clientWidth,
+		top: ((nextVerticalPosition - 10.42) / 100) * gameArea.clientHeight,
+		bottom: ((nextVerticalPosition + 10.42) / 100) * gameArea.clientHeight,
 	};
 
 	// Check for collisions with boxes
@@ -135,16 +134,21 @@ function gameLoop() {
 					horizontalPosition = (boxRect.left / gameArea.clientWidth) * 100 + 9.9;
 					velocityX = 0; // Stop horizontal movement
 				}
-			} else if (playerRect.bottom > boxRect.top && velocityY > 0 && playerRect.top < boxRect.bottom) {
-				verticalPosition = (boxRect.top / gameArea.clientHeight) * 100 - 10.42;
-				if (isJumping) {
-					velocityY = -JUMP_STRENGTH; // Apply jump force
-				} else {
-					canJump = true;
+			} else {
+				if (playerRect.bottom > boxRect.top && velocityY > 0 && playerRect.top < boxRect.bottom) {
+					verticalPosition = (boxRect.top / gameArea.clientHeight) * 100 - 10.42;
+					if (isJumping) {
+						velocityY = -JUMP_STRENGTH; // Apply jump force
+					} else {
+						canJump = true;
+						velocityY = 0;
+					}
+					onBox = true;
+					currentlyOnBox = true;
+				} else if (playerRect.top < boxRect.bottom && velocityY < 0 && playerRect.bottom > boxRect.top) {
+					verticalPosition = (boxRect.bottom / gameArea.clientHeight) * 100 + 10.42;
 					velocityY = 0;
 				}
-				onBox = true;
-				currentlyOnBox = true;
 			}
 		}
 	}
@@ -158,8 +162,8 @@ function gameLoop() {
 		verticalPosition += velocityY;
 
 	// Collision with the ground (stop falling)
-	if (verticalPosition >= 89.5) {
-		verticalPosition = 89.5; // Set to the ground level
+	if (verticalPosition >= 75.9) {
+		verticalPosition = 75.9; // Set to the ground level
 		velocityY = 0; // Stop downward velocity
         if (isJumping) {
             velocityY = -JUMP_STRENGTH; // Apply jump force
