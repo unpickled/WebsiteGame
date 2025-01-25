@@ -3,6 +3,7 @@ const playButton = document.getElementById('play-btn');
 const homeScreen = document.getElementById('home-screen');
 const gameArea = document.getElementById('game-area');
 const player = document.getElementById('player');
+const boxes = document.querySelectorAll('.brick');
 
 // Define constants and variables
 const GRAVITY = 0.25; // Gravity force
@@ -18,9 +19,20 @@ let velocityY = 0; // Vertical velocity (gravity / jumping)
 
 // Flags for key states
 let isJumping = false;
-let canJump = true
+let canJump = true;
 let isMovingLeft = false;
 let isMovingRight = false;
+let onBox = false;
+
+// Check for collisions with boxes
+function checkCollision(playerRect, boxRect) {
+	return (
+		playerRect.left < boxRect.right &&
+		playerRect.right > boxRect.left &&
+		playerRect.top < boxRect.bottom &&
+		playerRect.bottom > boxRect.top
+	);
+}
 
 // Listen for keydown events to move the player
 document.addEventListener('keydown', (event) => {
@@ -76,7 +88,7 @@ function gameLoop() {
 	// Apply gravity
 	velocityY += GRAVITY; // Make the player fall due to gravity
 
-	// Reduce horizontal acceleration and cap velocity if the player is jumping
+	// Reduce horizontal acceleration if the player is jumping
 	if (!canJump) {
         velocityX *= AIRRESISTANCE; // apply air resistance when in air
 
@@ -97,18 +109,53 @@ function gameLoop() {
 		}
     }
 
-	// Update horizontal and vertical position
-	horizontalPosition += velocityX;
-    verticalPosition += velocityY;
+	// Predict next position
+	const nextHorizontalPosition = horizontalPosition + velocityX;
+	const nextVerticalPosition = verticalPosition + velocityY;
 
-    // Restrict horizontal movement (ensure player stays within the game area)
-	if (horizontalPosition < 3.4) {
-		horizontalPosition = 3.4; // Left border
-		velocityX = 0; // Stop horizontal velocity at the left border
-	} else if (horizontalPosition > 96.6) {
-		horizontalPosition = 96.6; // Right border
-		velocityX = 0; // Stop horizontal velocity at the right border
+	const playerRect = {
+		left: ((nextHorizontalPosition - 3.14) / 100) * gameArea.clientWidth,
+		right: ((nextHorizontalPosition + 3.14) / 100) * gameArea.clientWidth, // Adjust width as % of game area
+		top: (nextVerticalPosition / 100) * gameArea.clientHeight,
+		bottom: ((nextVerticalPosition + 10.42) / 100) * gameArea.clientHeight, // Adjust height as % of game area
+	};
+
+	// Check for collisions with boxes
+	let currentlyOnBox = false;
+	for (const box of boxes) {
+		const boxRect = box.getBoundingClientRect();
+		if (checkCollision(playerRect, boxRect)) {
+			const overlapX = Math.min(playerRect.right - boxRect.left, boxRect.right - playerRect.left);
+			const overlapY = Math.min(playerRect.bottom - boxRect.top, boxRect.bottom - playerRect.top);
+			if (overlapX < overlapY) {
+				if (playerRect.right > boxRect.left && velocityX > 0 && playerRect.left < boxRect.left) {
+					horizontalPosition = (boxRect.right / gameArea.clientWidth) * 100 - 9.9;
+					velocityX = 0; // Stop horizontal movement
+				} else if (playerRect.left < boxRect.right && velocityX < 0 && playerRect.right > boxRect.right) {
+					horizontalPosition = (boxRect.left / gameArea.clientWidth) * 100 + 9.9;
+					velocityX = 0; // Stop horizontal movement
+				}
+			} else if (playerRect.bottom > boxRect.top && velocityY > 0 && playerRect.top < boxRect.bottom) {
+				verticalPosition = (boxRect.top / gameArea.clientHeight) * 100 - 10.42;
+				if (isJumping) {
+					velocityY = -JUMP_STRENGTH; // Apply jump force
+				} else {
+					canJump = true;
+					velocityY = 0;
+				}
+				onBox = true;
+				currentlyOnBox = true;
+			}
+		}
 	}
+	if (onBox && currentlyOnBox === false) {
+		onBox = false;
+		canJump = false;
+	}
+
+	// Update horizontal and vertical position
+		horizontalPosition += velocityX;
+		verticalPosition += velocityY;
 
 	// Collision with the ground (stop falling)
 	if (verticalPosition >= 89.5) {
@@ -116,11 +163,14 @@ function gameLoop() {
 		velocityY = 0; // Stop downward velocity
         if (isJumping) {
             velocityY = -JUMP_STRENGTH; // Apply jump force
-            canJump = false;
         } else {
             canJump = true;
+			velocityY = 0;
         }
 	}
+
+	// Restrict horizontal movement (ensure player stays within the game area)
+	horizontalPosition = Math.max(3.4, Math.min(96.6, horizontalPosition));
 
 	// Update the player's position on the screen
 	player.style.left = `${horizontalPosition}%`;

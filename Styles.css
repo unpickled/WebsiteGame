@@ -63,6 +63,16 @@ h1 {
 	transform: translate(-50%, -50%);
 }
 
+/* Brick */
+.brick {
+	position: absolute;
+	width: 100px;
+	height: 100px;
+	background-image: url('BrickSkin.png'); /* Replace with your image URL */
+	background-size: cover; /* Ensures the image covers the entire square */
+	background-position: center; /* Centers the texture */
+}
+
 /* Show game area */
 #game-area.show {
 	display: block;
