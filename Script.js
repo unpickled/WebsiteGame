@@ -3,7 +3,7 @@ const playButton = document.getElementById('play-btn');
 const homeScreen = document.getElementById('home-screen');
 const gameArea = document.getElementById('game-area');
 const player = document.getElementById('player');
-const boxes = document.querySelectorAll('.brick');
+let boxes = document.querySelectorAll('.brick');
 
 // Define constants and variables
 const GRAVITY = 0.25; // Gravity force
@@ -12,8 +12,8 @@ const FRICTION = 0.7; // Deceleration for horizontal movement
 const STEP = 0.275; // How much the player moves horizontally with each key press
 const AIRACCELERATION = 0.15; // How much the player accelerates while in the air
 const AIRRESISTANCE = 0.95; // Horizontal deceleration in air
-let horizontalPosition = 50; // Horizontal position as a percentage
-let verticalPosition = 100; // Vertical position as a percentage
+let horizontalPosition = 3.4; // Horizontal position as a percentage
+let verticalPosition = 75.9; // Vertical position as a percentage
 let velocityX = 0; // Horizontal velocity
 let velocityY = 0; // Vertical velocity (gravity / jumping)
 
@@ -23,6 +23,84 @@ let canJump = true;
 let isMovingLeft = false;
 let isMovingRight = false;
 let onBox = false;
+
+// Levels
+const levels = [
+	[
+		{ left: "0%", top: "86.2%" },
+		{ left: "6.25%", top: "86.2%" },
+		{ left: "12.5%", top: "86.2%" },
+		{ left: "18.75%", top: "86.2%" },
+		{ left: "25%", top: "86.2%" },
+		{ left: "31.25%", top: "86.2%" },
+		{ left: "37.5%", top: "86.2%" },
+		{ left: "43.75%", top: "86.2%" },
+		{ left: "50%", top: "86.2%" },
+		{ left: "56.25%", top: "86.2%" },
+		{ left: "62.5%", top: "86.2%" },
+		{ left: "68.75%", top: "86.2%" },
+		{ left: "75%", top: "86.2%" },
+		{ left: "81.25%", top: "86.2%" },
+		{ left: "87.5%", top: "86.2%" },
+		{ left: "93.75%", top: "86.2%" },
+		{ left: "75%", top: "73%" },
+		{ left: "75%", top: "59.8%" },
+		{ left: "37.5%", top: "73%" },
+		{ left: "56.25%", top: "73%" },
+		{ left: "93.75%", top: "73%" },
+		{ left: "93.75%", top: "59.8%" },
+		{ left: "93.75%", top: "46.6%" },
+		{ left: "12.5%", top: "33.4%" },
+		{ left: "6.25%", top: "33.4%" },
+	],
+	[
+		{ left: "0%", top: "86.2%" },
+		{ left: "6.25%", top: "86.2%" },
+		{ left: "12.5%", top: "86.2%" },
+		{ left: "18.75%", top: "86.2%" },
+		{ left: "25%", top: "86.2%" },
+		{ left: "31.25%", top: "86.2%" },
+		{ left: "37.5%", top: "86.2%" },
+		{ left: "43.75%", top: "86.2%" },
+		{ left: "50%", top: "86.2%" },
+		{ left: "56.25%", top: "86.2%" },
+		{ left: "62.5%", top: "86.2%" },
+		{ left: "68.75%", top: "86.2%" },
+		{ left: "75%", top: "86.2%" },
+		{ left: "81.25%", top: "86.2%" },
+		{ left: "87.5%", top: "86.2%" },
+		{ left: "93.75%", top: "86.2%" },
+		{ left: "43.75%", top: "46.6%" },
+		{ left: "37.5%", top: "46.6%" },
+		{ left: "37.5%", top: "33.4%" },
+		{ left: "62.5%", top: "73%" },
+		{ left: "87.5%", top: "73%" },
+		{ left: "87.5%", top: "59.8%" },
+		{ left: "18.75%", top: "73%" },
+		{ left: "18.75%", top: "59.8%" }
+	],
+];
+let currentLevel = 0;
+
+function loadLevel(levelIndex) {
+	// Clear existing blocks
+	const existingBlocks = document.querySelectorAll('.brick');
+	existingBlocks.forEach((block) => block.remove());
+
+	// Add new blocks
+	const newLevel = levels[levelIndex];
+	newLevel.forEach((block) => {
+		const brick = document.createElement('div');
+		brick.className = 'brick';
+		brick.style.left = block.left;
+		brick.style.top = block.top;
+		gameArea.appendChild(brick);
+	});
+
+	// Update the boxes variable to include the new bricks
+	boxes = document.querySelectorAll('.brick');
+}
+
 
 // Check for collisions with boxes
 function checkCollision(playerRect, boxRect) {
@@ -80,6 +158,7 @@ document.addEventListener('keyup', (event) => {
 playButton.addEventListener('click', () => {
 	homeScreen.classList.add('hidden'); // Hide the home screen
 	gameArea.classList.add('show'); // Show the game area
+	loadLevel(0); // Load the first level
 	requestAnimationFrame(gameLoop); // Start the game loop
 });
 
@@ -162,8 +241,8 @@ function gameLoop() {
 		verticalPosition += velocityY;
 
 	// Collision with the ground (stop falling)
-	if (verticalPosition >= 75.9) {
-		verticalPosition = 75.9; // Set to the ground level
+	if (verticalPosition > 75.9) {
+		verticalPosition = 75.9;
 		velocityY = 0; // Stop downward velocity
         if (isJumping) {
             velocityY = -JUMP_STRENGTH; // Apply jump force
@@ -174,7 +253,17 @@ function gameLoop() {
 	}
 
 	// Restrict horizontal movement (ensure player stays within the game area)
-	horizontalPosition = Math.max(3.4, Math.min(96.6, horizontalPosition));
+	horizontalPosition = Math.max(3.4, horizontalPosition);
+
+	if (horizontalPosition >= 96.6) {
+		// Increment the level
+		currentLevel = (currentLevel + 1) % levels.length; // Loop back to the first level if needed
+		loadLevel(currentLevel);
+	
+		// Reset player position
+		horizontalPosition = 3.4; // Move player to the left edge
+		verticalPosition = 75.9; // Move player to ground level
+	}
 
 	// Update the player's position on the screen
 	player.style.left = `${horizontalPosition}%`;
