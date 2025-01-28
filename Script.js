@@ -3,7 +3,9 @@ const playButton = document.getElementById('play-btn');
 const homeScreen = document.getElementById('home-screen');
 const gameArea = document.getElementById('game-area');
 const player = document.getElementById('player');
+const heartContainer = document.getElementById("heart-container");
 let boxes = document.querySelectorAll('.brick');
+let zombies = document.querySelectorAll('.zombie');
 
 // Define constants and variables
 const GRAVITY = 0.25; // Gravity force
@@ -16,6 +18,9 @@ let horizontalPosition = 3.4; // Horizontal position as a percentage
 let verticalPosition = 75.9; // Vertical position as a percentage
 let velocityX = 0; // Horizontal velocity
 let velocityY = 0; // Vertical velocity (gravity / jumping)
+let maxHealth = 10; // Player's max health
+let health = 10; // Player's current health
+let iframes = 0; // Invincibility length between hits
 
 // Flags for key states
 let isJumping = false;
@@ -82,6 +87,31 @@ const levels = [
 ];
 let currentLevel = 0;
 
+// Renders health
+function renderHearts(currentHealth) {
+	heartContainer.innerHTML = ""; // Clear existing hearts
+
+	// Loop through maxHealth to render each heart
+	for (let i = 0; i < maxHealth; i += 2) {
+		const heart = document.createElement("div");
+		heart.classList.add("heart");
+
+		if (currentHealth >= i + 2) {
+			// Full heart
+			heart.classList.add("full-heart");
+		} else if (currentHealth === i + 1) {
+			// Half heart
+			heart.classList.add("half-heart");
+		} else {
+			// Empty heart
+			heart.classList.add("empty-heart");
+		}
+
+		heartContainer.appendChild(heart);
+	}
+}
+renderHearts(health)
+
 function loadLevel(levelIndex) {
 	// Clear existing blocks
 	const existingBlocks = document.querySelectorAll('.brick');
@@ -102,13 +132,13 @@ function loadLevel(levelIndex) {
 }
 
 
-// Check for collisions with boxes
-function checkCollision(playerRect, boxRect) {
+// Check for collisions
+function checkCollision(rect1, rect2) {
 	return (
-		playerRect.left < boxRect.right &&
-		playerRect.right > boxRect.left &&
-		playerRect.top < boxRect.bottom &&
-		playerRect.bottom > boxRect.top
+		rect1.left < rect2.right &&
+		rect1.right > rect2.left &&
+		rect1.top < rect2.bottom &&
+		rect1.bottom > rect2.top
 	);
 }
 
@@ -164,6 +194,11 @@ playButton.addEventListener('click', () => {
 
 // Game loop (updates position every frame)
 function gameLoop() {
+
+	if (iframes > 0) {
+		iframes--;
+	}
+
 	// Apply gravity
 	velocityY += GRAVITY; // Make the player fall due to gravity
 
@@ -187,10 +222,36 @@ function gameLoop() {
 		}
     }
 
+	// Check for collisions with zombies and make zombie face player
+	const currentPlayerRect = player.getBoundingClientRect();
+	for (const zombie of zombies) {
+		const zombieRect = zombie.getBoundingClientRect();
+		if (currentPlayerRect.left < zombieRect.left) {
+			zombie.style.backgroundImage = "url('ZombieSkin.png')";
+			if (checkCollision(currentPlayerRect, zombieRect) && iframes === 0) {
+				health--;
+				renderHearts(health);
+				velocityX -= 1;
+				velocityY -= 1;
+				iframes = 20;
+			}
+		} else {
+			zombie.style.backgroundImage = "url('ZombieSkin2.png')";
+			if (checkCollision(currentPlayerRect, zombieRect) && iframes === 0) {
+				health--;
+				renderHearts(health);
+				velocityX += 1;
+				velocityY += 1;
+				iframes = 20;
+			}
+		}
+	}
+
 	// Predict next position
 	const nextHorizontalPosition = horizontalPosition + velocityX;
 	const nextVerticalPosition = verticalPosition + velocityY;
 
+	// Check for collisions with boxes
 	const playerRect = {
 		left: ((nextHorizontalPosition - 3.14) / 100) * gameArea.clientWidth,
 		right: ((nextHorizontalPosition + 3.14) / 100) * gameArea.clientWidth,
@@ -237,8 +298,8 @@ function gameLoop() {
 	}
 
 	// Update horizontal and vertical position
-		horizontalPosition += velocityX;
-		verticalPosition += velocityY;
+	horizontalPosition += velocityX;
+	verticalPosition += velocityY;
 
 	// Collision with the ground (stop falling)
 	if (verticalPosition > 75.9) {

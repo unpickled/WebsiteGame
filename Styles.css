@@ -55,7 +55,7 @@ h1 {
 	position: absolute;
 	width: 104px;
 	height: 152px;
-	background-image: url('PlayerSkin.png'); /* Replace with your image URL */
+	background-image: url('PlayerSkin.png');
 	background-size: cover; /* Ensures the image covers the entire square */
 	background-position: center; /* Centers the texture */
 	top: 50%; /* Start vertically centered */
@@ -68,9 +68,50 @@ h1 {
 	position: absolute;
 	width: 100px;
 	height: 100px;
-	background-image: url('BrickSkin.png'); /* Replace with your image URL */
+	background-image: url('BrickSkin.png');
 	background-size: cover; /* Ensures the image covers the entire square */
 	background-position: center; /* Centers the texture */
+}
+
+/* Zombie */
+.zombie {
+	position: absolute;
+	width: 72px;
+	height: 147px;
+	background-image: url('ZombieSkin.png');
+	background-size: cover; /* Ensures the image covers the entire square */
+	background-position: center; /* Centers the texture */
+	top: 66%; /* Start vertically centered */
+	left: 70%; /* Start horizontally centered */
+}
+
+/* Heart */
+
+#heart-container {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start; /* Aligns hearts from the left */
+	gap: 8px; /* Spacing between hearts */
+	padding: 5px;
+}
+
+.heart {
+	width: 64px;
+	height: 60px;
+	background-size: cover; /* Ensures the image covers the entire square */
+	background-position: center; /* Centers the texture */
+}
+
+.full-heart {
+	background: url('Heart.png') no-repeat center center;
+}
+
+.half-heart {
+	background: url('HalfHeart.png') no-repeat center center;
+}
+
+.empty-heart {
+	background: url('EmptyHeart.png') no-repeat center center;
 }
 
 /* Show game area */
