@@ -81,8 +81,6 @@ h1 {
 	background-image: url('ZombieSkin.png');
 	background-size: cover; /* Ensures the image covers the entire square */
 	background-position: center; /* Centers the texture */
-	top: 66%; /* Start vertically centered */
-	left: 70%; /* Start horizontally centered */
 }
 
 /* Heart */

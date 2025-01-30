@@ -4,16 +4,18 @@ const homeScreen = document.getElementById('home-screen');
 const gameArea = document.getElementById('game-area');
 const player = document.getElementById('player');
 const heartContainer = document.getElementById("heart-container");
-let boxes = document.querySelectorAll('.brick');
-let zombies = document.querySelectorAll('.zombie');
+let boxes;
+let zombies;
 
 // Define constants and variables
 const GRAVITY = 0.25; // Gravity force
 const JUMP_STRENGTH = 4.5; // How high the player can jump
 const FRICTION = 0.7; // Deceleration for horizontal movement
 const STEP = 0.275; // How much the player moves horizontally with each key press
+const ZOMBIESTEP = 0.1; // How much zombies move horizontallly every frame
 const AIRACCELERATION = 0.15; // How much the player accelerates while in the air
 const AIRRESISTANCE = 0.95; // Horizontal deceleration in air
+const I_FRAMES = 20; // Invicibility length between hits
 let horizontalPosition = 3.4; // Horizontal position as a percentage
 let verticalPosition = 75.9; // Vertical position as a percentage
 let velocityX = 0; // Horizontal velocity
@@ -30,7 +32,7 @@ let isMovingRight = false;
 let onBox = false;
 
 // Levels
-const levels = [
+const blockLevels = [
 	[
 		{ left: "0%", top: "86.2%" },
 		{ left: "6.25%", top: "86.2%" },
@@ -85,10 +87,18 @@ const levels = [
 		{ left: "18.75%", top: "59.8%" }
 	],
 ];
+const zombieLevels = [
+	[
+		{ left: "65%", top: "66%" },
+	],
+	[
+		{ left: "50%", top: "66%" },
+	],
+];
 let currentLevel = 0;
 
 // Renders health
-function renderHearts(currentHealth) {
+function renderHearts() {
 	heartContainer.innerHTML = ""; // Clear existing hearts
 
 	// Loop through maxHealth to render each heart
@@ -96,10 +106,10 @@ function renderHearts(currentHealth) {
 		const heart = document.createElement("div");
 		heart.classList.add("heart");
 
-		if (currentHealth >= i + 2) {
+		if (health >= i + 2) {
 			// Full heart
 			heart.classList.add("full-heart");
-		} else if (currentHealth === i + 1) {
+		} else if (health === i + 1) {
 			// Half heart
 			heart.classList.add("half-heart");
 		} else {
@@ -110,16 +120,18 @@ function renderHearts(currentHealth) {
 		heartContainer.appendChild(heart);
 	}
 }
-renderHearts(health)
+renderHearts()
 
 function loadLevel(levelIndex) {
-	// Clear existing blocks
+	// Clear existing blocks and zombies
 	const existingBlocks = document.querySelectorAll('.brick');
+	const existingZombies = document.querySelectorAll('.zombie');
 	existingBlocks.forEach((block) => block.remove());
+	existingZombies.forEach((zombie) => zombie.remove());
 
 	// Add new blocks
-	const newLevel = levels[levelIndex];
-	newLevel.forEach((block) => {
+	const blockLevel = blockLevels[levelIndex];
+	blockLevel.forEach((block) => {
 		const brick = document.createElement('div');
 		brick.className = 'brick';
 		brick.style.left = block.left;
@@ -127,8 +139,19 @@ function loadLevel(levelIndex) {
 		gameArea.appendChild(brick);
 	});
 
-	// Update the boxes variable to include the new bricks
+	// Add new blocks
+	const zombieLevel = zombieLevels[levelIndex];
+	zombieLevel.forEach((zombie) => {
+		const newzombie = document.createElement('div');
+		newzombie.className = 'zombie';
+		newzombie.style.left = zombie.left;
+		newzombie.style.top = zombie.top;
+		gameArea.appendChild(newzombie);
+	});
+
+	// Update variables to include new objects
 	boxes = document.querySelectorAll('.brick');
+	zombies = document.querySelectorAll('.zombie');
 }
 
 
@@ -230,19 +253,19 @@ function gameLoop() {
 			zombie.style.backgroundImage = "url('ZombieSkin.png')";
 			if (checkCollision(currentPlayerRect, zombieRect) && iframes === 0) {
 				health--;
-				renderHearts(health);
+				renderHearts();
 				velocityX -= 1;
 				velocityY -= 1;
-				iframes = 20;
+				iframes = I_FRAMES;
 			}
 		} else {
 			zombie.style.backgroundImage = "url('ZombieSkin2.png')";
 			if (checkCollision(currentPlayerRect, zombieRect) && iframes === 0) {
 				health--;
-				renderHearts(health);
+				renderHearts();
 				velocityX += 1;
 				velocityY += 1;
-				iframes = 20;
+				iframes = I_FRAMES;
 			}
 		}
 	}
@@ -318,7 +341,7 @@ function gameLoop() {
 
 	if (horizontalPosition >= 96.6) {
 		// Increment the level
-		currentLevel = (currentLevel + 1) % levels.length; // Loop back to the first level if needed
+		currentLevel = (currentLevel + 1) % blockLevels.length; // Loop back to the first level if needed
 		loadLevel(currentLevel);
 	
 		// Reset player position
