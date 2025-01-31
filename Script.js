@@ -5,7 +5,7 @@ const gameArea = document.getElementById('game-area');
 const player = document.getElementById('player');
 const heartContainer = document.getElementById("heart-container");
 let boxes;
-let zombies;
+let zombies = [];
 
 // Define constants and variables
 const GRAVITY = 0.25; // Gravity force
@@ -89,7 +89,8 @@ const blockLevels = [
 ];
 const zombieLevels = [
 	[
-		{ left: "65%", top: "66%" },
+		{ left: "48%", top: "66%" },
+		{ left: "66%", top: "66%" },
 	],
 	[
 		{ left: "50%", top: "66%" },
@@ -126,6 +127,7 @@ function loadLevel(levelIndex) {
 	// Clear existing blocks and zombies
 	const existingBlocks = document.querySelectorAll('.brick');
 	const existingZombies = document.querySelectorAll('.zombie');
+	zombies = [];
 	existingBlocks.forEach((block) => block.remove());
 	existingZombies.forEach((zombie) => zombie.remove());
 
@@ -139,19 +141,22 @@ function loadLevel(levelIndex) {
 		gameArea.appendChild(brick);
 	});
 
-	// Add new blocks
+	// Add new zombies
 	const zombieLevel = zombieLevels[levelIndex];
 	zombieLevel.forEach((zombie) => {
-		const newzombie = document.createElement('div');
-		newzombie.className = 'zombie';
-		newzombie.style.left = zombie.left;
-		newzombie.style.top = zombie.top;
-		gameArea.appendChild(newzombie);
-	});
+		const newZombie = document.createElement('div');
+		newZombie.className = 'zombie';
+		newZombie.style.left = zombie.left;
+		newZombie.style.top = zombie.top;
+		gameArea.appendChild(newZombie);
+		zombies.push({
+			element: newZombie,
+			vx: 0,
+			vy: 0
+		});
 
-	// Update variables to include new objects
-	boxes = document.querySelectorAll('.brick');
-	zombies = document.querySelectorAll('.zombie');
+	boxes = document.querySelectorAll('.brick')
+	});
 }
 
 
@@ -223,7 +228,7 @@ function gameLoop() {
 	}
 
 	// Apply gravity
-	velocityY += GRAVITY; // Make the player fall due to gravity
+	velocityY += GRAVITY;
 
 	// Reduce horizontal acceleration if the player is jumping
 	if (!canJump) {
@@ -248,9 +253,36 @@ function gameLoop() {
 	// Check for collisions with zombies and make zombie face player
 	const currentPlayerRect = player.getBoundingClientRect();
 	for (const zombie of zombies) {
-		const zombieRect = zombie.getBoundingClientRect();
+		zombie.vx *= FRICTION;
+		const nextZombieX = parseFloat(zombie.element.style.left) + zombie.vx;
+		const nextZombieY = parseFloat(zombie.element.style.top) + zombie.vy;
+		const futureZombieRect = {
+			left: ((nextZombieX) / 100) * gameArea.clientWidth,
+			right: ((nextZombieX + 4.75) / 100) * gameArea.clientWidth,
+			top: ((nextZombieY) / 100) * gameArea.clientHeight,
+			bottom: ((nextZombieY + 10) / 100) * gameArea.clientHeight,	
+		};
+		for (const box of boxes) {
+			const boxRect = box.getBoundingClientRect();
+			if (checkCollision(futureZombieRect, boxRect)) {
+				const overlapX = Math.min(futureZombieRect.right - boxRect.left, boxRect.right - futureZombieRect.left);
+				const overlapY = Math.min(futureZombieRect.bottom - boxRect.top, boxRect.bottom - futureZombieRect.top);
+				if (overlapX < overlapY) {
+					if (futureZombieRect.right > boxRect.left && futureZombieRect.left < boxRect.left) {
+						zombie.element.style.left = `${(boxRect.right / gameArea.clientWidth) * 100 - 11.2}%`;
+						zombie.vx = 0; // Stop horizontal movement
+					} else if (futureZombieRect.left < boxRect.right && futureZombieRect.right > boxRect.right) {
+						zombie.element.style.left = `${(boxRect.left / gameArea.clientWidth) * 100 + 6.5}%`
+						zombie.vx = 0; // Stop horizontal movement
+					}
+				}
+			}
+		}
+		zombie.element.style.left = `${parseFloat(zombie.element.style.left) + zombie.vx}%`;
+		const zombieRect = zombie.element.getBoundingClientRect();
 		if (currentPlayerRect.left < zombieRect.left) {
-			zombie.style.backgroundImage = "url('ZombieSkin.png')";
+			zombie.element.style.backgroundImage = "url('ZombieSkin.png')";
+			zombie.vx = Math.max(zombie.vx - ZOMBIESTEP, -0.4);
 			if (checkCollision(currentPlayerRect, zombieRect) && iframes === 0) {
 				health--;
 				renderHearts();
@@ -259,7 +291,8 @@ function gameLoop() {
 				iframes = I_FRAMES;
 			}
 		} else {
-			zombie.style.backgroundImage = "url('ZombieSkin2.png')";
+			zombie.element.style.backgroundImage = "url('ZombieSkin2.png')";
+			zombie.vx = Math.min(zombie.vx + ZOMBIESTEP, 0.4);
 			if (checkCollision(currentPlayerRect, zombieRect) && iframes === 0) {
 				health--;
 				renderHearts();
@@ -290,10 +323,10 @@ function gameLoop() {
 			const overlapX = Math.min(playerRect.right - boxRect.left, boxRect.right - playerRect.left);
 			const overlapY = Math.min(playerRect.bottom - boxRect.top, boxRect.bottom - playerRect.top);
 			if (overlapX < overlapY) {
-				if (playerRect.right > boxRect.left && velocityX > 0 && playerRect.left < boxRect.left) {
+				if (playerRect.right > boxRect.left && playerRect.left < boxRect.left) {
 					horizontalPosition = (boxRect.right / gameArea.clientWidth) * 100 - 9.9;
 					velocityX = 0; // Stop horizontal movement
-				} else if (playerRect.left < boxRect.right && velocityX < 0 && playerRect.right > boxRect.right) {
+				} else if (playerRect.left < boxRect.right && playerRect.right > boxRect.right) {
 					horizontalPosition = (boxRect.left / gameArea.clientWidth) * 100 + 9.9;
 					velocityX = 0; // Stop horizontal movement
 				}
