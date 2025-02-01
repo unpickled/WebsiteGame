@@ -10,6 +10,7 @@ let zombies = [];
 // Define constants and variables
 const GRAVITY = 0.25; // Gravity force
 const JUMP_STRENGTH = 4.5; // How high the player can jump
+const ZOMBIE_JUMP_STRENGTH = 3.5; // How high zombies can jump
 const FRICTION = 0.7; // Deceleration for horizontal movement
 const STEP = 0.275; // How much the player moves horizontally with each key press
 const ZOMBIESTEP = 0.1; // How much zombies move horizontallly every frame
@@ -152,7 +153,8 @@ function loadLevel(levelIndex) {
 		zombies.push({
 			element: newZombie,
 			vx: 0,
-			vy: 0
+			vy: 0,
+			canJump: false
 		});
 
 	boxes = document.querySelectorAll('.brick')
@@ -254,13 +256,14 @@ function gameLoop() {
 	const currentPlayerRect = player.getBoundingClientRect();
 	for (const zombie of zombies) {
 		zombie.vx *= FRICTION;
+		zombie.vy += GRAVITY;
 		const nextZombieX = parseFloat(zombie.element.style.left) + zombie.vx;
 		const nextZombieY = parseFloat(zombie.element.style.top) + zombie.vy;
 		const futureZombieRect = {
-			left: ((nextZombieX) / 100) * gameArea.clientWidth,
+			left: (nextZombieX / 100) * gameArea.clientWidth,
 			right: ((nextZombieX + 4.75) / 100) * gameArea.clientWidth,
 			top: ((nextZombieY) / 100) * gameArea.clientHeight,
-			bottom: ((nextZombieY + 10) / 100) * gameArea.clientHeight,	
+			bottom: ((nextZombieY + 20) / 100) * gameArea.clientHeight,	
 		};
 		for (const box of boxes) {
 			const boxRect = box.getBoundingClientRect();
@@ -271,14 +274,31 @@ function gameLoop() {
 					if (futureZombieRect.right > boxRect.left && futureZombieRect.left < boxRect.left) {
 						zombie.element.style.left = `${(boxRect.right / gameArea.clientWidth) * 100 - 11.2}%`;
 						zombie.vx = 0; // Stop horizontal movement
+						if (zombie.canJump) {
+							zombie.vy = -ZOMBIE_JUMP_STRENGTH; // Apply jump force
+							zombie.canJump = false;
+						}
 					} else if (futureZombieRect.left < boxRect.right && futureZombieRect.right > boxRect.right) {
 						zombie.element.style.left = `${(boxRect.left / gameArea.clientWidth) * 100 + 6.5}%`
 						zombie.vx = 0; // Stop horizontal movement
+						if (zombie.canJump) {
+							zombie.vy = -ZOMBIE_JUMP_STRENGTH; // Apply jump force
+							zombie.canJump = false;
+						}
+					}
+				} else {
+					if (futureZombieRect.bottom > boxRect.top && zombie.vy > 0 && futureZombieRect.top < boxRect.bottom) {
+						zombie.element.style.top = `${(boxRect.top / gameArea.clientWidth) * 100}%` + 1;
+						zombie.canJump = true;
+						zombie.vy = 0;
+					} else if (futureZombieRect.top < boxRect.bottom && zombie.vy < 0 && futureZombieRect.bottom > boxRect.top) {
+						zombie.vy = 0;
 					}
 				}
 			}
 		}
 		zombie.element.style.left = `${parseFloat(zombie.element.style.left) + zombie.vx}%`;
+		zombie.element.style.top = `${parseFloat(zombie.element.style.top) + zombie.vy}%`
 		const zombieRect = zombie.element.getBoundingClientRect();
 		if (currentPlayerRect.left < zombieRect.left) {
 			zombie.element.style.backgroundImage = "url('ZombieSkin.png')";
