@@ -26,7 +26,7 @@ h1 {
 }
 
 /* Play Button */
-#play-btn {
+.play-btn {
 	background-color: #4caf50;
 	color: white;
 	padding: 10px 20px;
@@ -36,7 +36,7 @@ h1 {
 	cursor: pointer;
 }
 
-#play-btn:hover {
+.play-btn:hover {
 	background-color: #45a049;
 }
 
@@ -47,6 +47,19 @@ h1 {
 	height: 100vh;
 	background-color: #444;
 	overflow: hidden;
+	display: none; /* Hidden initially */
+}
+
+/* Death Screen */
+#death-screen {
+	position: relative;
+	height: 100vh;
+	width: 100vw;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	background-color: #321919;
 	display: none; /* Hidden initially */
 }
 
@@ -110,14 +123,4 @@ h1 {
 
 .empty-heart {
 	background: url('EmptyHeart.png') no-repeat center center;
-}
-
-/* Show game area */
-#game-area.show {
-	display: block;
-}
-
-/* Hidden class for elements */
-#home-screen.hidden {
-	display: none;
 }

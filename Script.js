@@ -1,9 +1,8 @@
 // Get the elements
-const playButton = document.getElementById('play-btn');
-const homeScreen = document.getElementById('home-screen');
+const playButton = document.querySelectorAll('.play-btn');
 const gameArea = document.getElementById('game-area');
 const player = document.getElementById('player');
-const heartContainer = document.getElementById("heart-container");
+const heartContainer = document.getElementById('heart-container');
 let boxes;
 let zombies = [];
 
@@ -17,13 +16,17 @@ const ZOMBIESTEP = 0.1; // How much zombies move horizontallly every frame
 const AIRACCELERATION = 0.15; // How much the player accelerates while in the air
 const AIRRESISTANCE = 0.95; // Horizontal deceleration in air
 const I_FRAMES = 20; // Invicibility length between hits
+const ATTACK_COOLDOWN = 50; // Cooldown between attacks
 let horizontalPosition = 3.4; // Horizontal position as a percentage
 let verticalPosition = 75.9; // Vertical position as a percentage
 let velocityX = 0; // Horizontal velocity
 let velocityY = 0; // Vertical velocity (gravity / jumping)
 let maxHealth = 10; // Player's max health
-let health = 10; // Player's current health
+let health = 9; // Player's current health
 let iframes = 0; // Invincibility length between hits
+let attackCooldown = 50; // Cooldown between attacks
+let attackRange = 25; // How far player can attack
+let attackDamage = 5; // Damage on attack
 
 // Flags for key states
 let isJumping = false;
@@ -31,6 +34,18 @@ let canJump = true;
 let isMovingLeft = false;
 let isMovingRight = false;
 let onBox = false;
+let isFacingLeft = false;
+
+// Reload cursors
+const reloadCursors = [
+	"url('Cursors/Reload1.png'), auto",
+	"url('Cursors/Reload2.png'), auto",
+	"url('Cursors/Reload3.png'), auto",
+	"url('Cursors/Reload4.png'), auto",
+	"url('Cursors/Reload5.png'), auto",
+	"url('Cursors/Reload6.png'), auto",
+	"url('Cursors/Reload7.png'), auto"
+];
 
 // Levels
 const blockLevels = [
@@ -99,6 +114,7 @@ const zombieLevels = [
 ];
 let currentLevel = 0;
 
+// Functions
 // Renders health
 function renderHearts() {
 	heartContainer.innerHTML = ""; // Clear existing hearts
@@ -154,7 +170,9 @@ function loadLevel(levelIndex) {
 			element: newZombie,
 			vx: 0,
 			vy: 0,
-			canJump: false
+			canJump: false,
+			iframes: 0,
+			health: 8
 		});
 
 	boxes = document.querySelectorAll('.brick')
@@ -172,15 +190,48 @@ function checkCollision(rect1, rect2) {
 	);
 }
 
+function attack() {
+	let closestEnemy = null;
+	let closestDistance = Infinity;
+
+	zombies.forEach(zombie => {
+		let dx = parseFloat(zombie.element.style.left) - parseFloat(player.style.left);
+		let dy = parseFloat(zombie.element.style.top) - parseFloat(player.style.top);
+		let distance = Math.sqrt(dx * dx + dy * dy);
+		if ((!isFacingLeft &&  dx > 0) || (isFacingLeft &&  dx < 0)) {
+			if (distance <= attackRange && distance < closestDistance && zombie.iframes === 0) {
+				closestDistance = distance;
+				closestEnemy = zombie;
+			}
+		}
+	})
+	
+	if (closestEnemy) {
+		closestEnemy.health -= attackDamage;
+		closestEnemy.iframes = I_FRAMES;
+		if (isFacingLeft) {
+			closestEnemy.vx -= 3;
+		} else {
+			closestEnemy.vx += 3;
+		}
+		if (closestEnemy.health <= 0) {
+			closestEnemy.element.remove();
+		}
+	}
+}
+
+// Inputs
 // Listen for keydown events to move the player
 document.addEventListener('keydown', (event) => {
 	switch (event.key.toLowerCase()) {
 		case 'a': // Move left
 			isMovingLeft = true;
+			isFacingLeft = true;
             player.style.backgroundImage = "url('PlayerSkin2.png')";
 			break;
 		case 'd': // Move right
 			isMovingRight = true;
+			isFacingLeft = false;
             player.style.backgroundImage = "url('PlayerSkin.png')";
 			break;
 		case 'w': // Jump
@@ -200,12 +251,14 @@ document.addEventListener('keyup', (event) => {
 			isMovingLeft = false;
             if (isMovingRight) {
                 player.style.backgroundImage = "url('PlayerSkin.png')";
+				isFacingLeft = false;
             }
 			break;
 		case 'd': // Stop moving right
 			isMovingRight = false;
             if (isMovingLeft) {
                 player.style.backgroundImage = "url('PlayerSkin2.png')";
+				isFacingLeft = true;
             }
 			break;
         case 'w':
@@ -214,12 +267,36 @@ document.addEventListener('keyup', (event) => {
 	}
 });
 
+// Prevent the default right-click menu from appearing
+document.addEventListener('contextmenu', (event) => {
+	event.preventDefault();
+});
+
+// Listen for clicks for player to attack
+document.addEventListener('mousedown', (event) => {
+	switch (event.button) {
+		case 0:
+			if (attackCooldown === ATTACK_COOLDOWN) {
+				attack();
+				attackCooldown = 0;
+			}
+			break;
+	}
+})
+
 // When the play button is clicked, hide the home screen and show the game
-playButton.addEventListener('click', () => {
-	homeScreen.classList.add('hidden'); // Hide the home screen
-	gameArea.classList.add('show'); // Show the game area
+playButton.forEach(button => {
+	button.addEventListener('click', () => {
+	document.getElementById('game-area').style.display = "block";
+	document.getElementById('death-screen').style.display = "none";
+	document.getElementById('home-screen').style.display = "none";
+	health = maxHealth;
+	renderHearts();
+	horizontalPosition = 3.4; // Move player to the left edge
+	verticalPosition = 75.9; // Move player to ground level
 	loadLevel(0); // Load the first level
 	requestAnimationFrame(gameLoop); // Start the game loop
+	});
 });
 
 // Game loop (updates position every frame)
@@ -227,6 +304,13 @@ function gameLoop() {
 
 	if (iframes > 0) {
 		iframes--;
+	}
+
+	if (attackCooldown < ATTACK_COOLDOWN) {
+		document.body.style.cursor = reloadCursors[Math.floor(attackCooldown / (ATTACK_COOLDOWN / 7))];
+		attackCooldown++;
+	} else {
+		document.body.style.cursor = "url('Cursors/FullyLoaded.png'), auto";
 	}
 
 	// Apply gravity
@@ -301,7 +385,12 @@ function gameLoop() {
 		zombie.element.style.top = `${parseFloat(zombie.element.style.top) + zombie.vy}%`
 		const zombieRect = zombie.element.getBoundingClientRect();
 		if (currentPlayerRect.left < zombieRect.left) {
-			zombie.element.style.backgroundImage = "url('ZombieSkin.png')";
+			if (zombie.iframes === 0) {
+				zombie.element.style.backgroundImage = "url('ZombieSkin.png')";
+			} else {
+				zombie.element.style.backgroundImage = "url('HurtZombieSkin.png')";
+				zombie.iframes--;
+			}
 			zombie.vx = Math.max(zombie.vx - ZOMBIESTEP, -0.4);
 			if (checkCollision(currentPlayerRect, zombieRect) && iframes === 0) {
 				health--;
@@ -309,9 +398,19 @@ function gameLoop() {
 				velocityX -= 1;
 				velocityY -= 1;
 				iframes = I_FRAMES;
+				if (health <= 0) {
+					document.getElementById('death-screen').style.display = "flex";
+					document.getElementById('game-area').style.display = "none";
+					return 0;
+				}
 			}
 		} else {
-			zombie.element.style.backgroundImage = "url('ZombieSkin2.png')";
+			if (zombie.iframes === 0) {
+				zombie.element.style.backgroundImage = "url('ZombieSkin2.png')";
+			} else {
+				zombie.element.style.backgroundImage = "url('HurtZombieSkin2.png')";
+				zombie.iframes--;
+			}
 			zombie.vx = Math.min(zombie.vx + ZOMBIESTEP, 0.4);
 			if (checkCollision(currentPlayerRect, zombieRect) && iframes === 0) {
 				health--;
@@ -394,12 +493,14 @@ function gameLoop() {
 
 	if (horizontalPosition >= 96.6) {
 		// Increment the level
-		currentLevel = (currentLevel + 1) % blockLevels.length; // Loop back to the first level if needed
-		loadLevel(currentLevel);
-	
-		// Reset player position
-		horizontalPosition = 3.4; // Move player to the left edge
-		verticalPosition = 75.9; // Move player to ground level
+		if (document.querySelectorAll('.zombie').length === 0) {
+			currentLevel = (currentLevel + 1) % blockLevels.length; // Loop back to the first level if needed
+			loadLevel(currentLevel);
+			horizontalPosition = 3.4; // Move player to the left edge
+			verticalPosition = 75.9; // Move player to ground level
+		} else {
+			horizontalPosition = 96.6;
+		}
 	}
 
 	// Update the player's position on the screen
