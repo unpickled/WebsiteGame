@@ -418,6 +418,11 @@ function gameLoop() {
 				velocityX += 1;
 				velocityY += 1;
 				iframes = I_FRAMES;
+				if (health <= 0) {
+					document.getElementById('death-screen').style.display = "flex";
+					document.getElementById('game-area').style.display = "none";
+					return 0;
+				}
 			}
 		}
 	}
