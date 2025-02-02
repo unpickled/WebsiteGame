@@ -94,7 +94,6 @@ const blockLevels = [
 		{ left: "87.5%", top: "86.2%" },
 		{ left: "93.75%", top: "86.2%" },
 		{ left: "43.75%", top: "46.6%" },
-		{ left: "37.5%", top: "46.6%" },
 		{ left: "37.5%", top: "33.4%" },
 		{ left: "62.5%", top: "73%" },
 		{ left: "87.5%", top: "73%" },
@@ -102,14 +101,31 @@ const blockLevels = [
 		{ left: "18.75%", top: "73%" },
 		{ left: "18.75%", top: "59.8%" }
 	],
-];
-const zombieLevels = [
 	[
-		{ left: "48%", top: "66%" },
-		{ left: "66%", top: "66%" },
-	],
-	[
-		{ left: "50%", top: "66%" },
+		{ left: "0%", top: "86.2%" },
+		{ left: "6.25%", top: "86.2%" },
+		{ left: "12.5%", top: "86.2%" },
+		{ left: "18.75%", top: "86.2%" },
+		{ left: "25%", top: "86.2%" },
+		{ left: "31.25%", top: "86.2%" },
+		{ left: "37.5%", top: "86.2%" },
+		{ left: "43.75%", top: "86.2%" },
+		{ left: "50%", top: "86.2%" },
+		{ left: "56.25%", top: "86.2%" },
+		{ left: "62.5%", top: "86.2%" },
+		{ left: "68.75%", top: "86.2%" },
+		{ left: "75%", top: "86.2%" },
+		{ left: "81.25%", top: "86.2%" },
+		{ left: "87.5%", top: "86.2%" },
+		{ left: "93.75%", top: "86.2%" },
+		{ left: "75%", top: "33.4%" },
+		{ left: "75%", top: "20.2%" },
+		{ left: "25%", top: "73%" },
+		{ left: "25%", top: "59.9%" },
+		{ left: "75%", top: "46.6%" },
+		{ left: "93.75%", top: "73%" },
+		{ left: "56.25%", top: "73%" },
+		{ left: "31.25%", top: "20.2%" },
 	],
 ];
 let currentLevel = 0;
@@ -140,7 +156,7 @@ function renderHearts() {
 }
 renderHearts()
 
-function loadLevel(levelIndex) {
+function loadLevel() {
 	// Clear existing blocks and zombies
 	const existingBlocks = document.querySelectorAll('.brick');
 	const existingZombies = document.querySelectorAll('.zombie');
@@ -148,8 +164,10 @@ function loadLevel(levelIndex) {
 	existingBlocks.forEach((block) => block.remove());
 	existingZombies.forEach((zombie) => zombie.remove());
 
+	// Choose the level
+	let level = Math.floor(Math.random() * blockLevels.length)
 	// Add new blocks
-	const blockLevel = blockLevels[levelIndex];
+	const blockLevel = blockLevels[level];
 	blockLevel.forEach((block) => {
 		const brick = document.createElement('div');
 		brick.className = 'brick';
@@ -159,12 +177,21 @@ function loadLevel(levelIndex) {
 	});
 
 	// Add new zombies
-	const zombieLevel = zombieLevels[levelIndex];
-	zombieLevel.forEach((zombie) => {
+	const Bricks = Array.from(document.querySelectorAll('.brick'));
+	let randomBricks = [];
+	for (let i = 0; i < Math.floor(Math.random() * 3) + 1; i++) {
+		while (randomBricks.length === i) {
+			const potentialBrick = Bricks[Math.floor(Math.random() * Bricks.length)];
+			if ((parseFloat(potentialBrick.style.left)) > 25 && !randomBricks.includes(potentialBrick)) {
+				randomBricks.push(potentialBrick);
+			}
+		}
+	}
+	randomBricks.forEach((zombie) => {
 		const newZombie = document.createElement('div');
 		newZombie.className = 'zombie';
-		newZombie.style.left = zombie.left;
-		newZombie.style.top = zombie.top;
+		newZombie.style.left = zombie.style.left;
+		newZombie.style.top = `${parseFloat(zombie.style.top) - 20.2}%`;
 		gameArea.appendChild(newZombie);
 		zombies.push({
 			element: newZombie,
@@ -227,12 +254,12 @@ document.addEventListener('keydown', (event) => {
 		case 'a': // Move left
 			isMovingLeft = true;
 			isFacingLeft = true;
-            player.style.backgroundImage = "url('PlayerSkin2.png')";
+            player.style.backgroundImage = "url('PlayerSkin.png')";
 			break;
 		case 'd': // Move right
 			isMovingRight = true;
 			isFacingLeft = false;
-            player.style.backgroundImage = "url('PlayerSkin.png')";
+            player.style.backgroundImage = "url('PlayerSkin2.png')";
 			break;
 		case 'w': // Jump
 			if (canJump) {
@@ -250,14 +277,14 @@ document.addEventListener('keyup', (event) => {
 		case 'a': // Stop moving left
 			isMovingLeft = false;
             if (isMovingRight) {
-                player.style.backgroundImage = "url('PlayerSkin.png')";
+                player.style.backgroundImage = "url('PlayerSkin2.png')";
 				isFacingLeft = false;
             }
 			break;
 		case 'd': // Stop moving right
 			isMovingRight = false;
             if (isMovingLeft) {
-                player.style.backgroundImage = "url('PlayerSkin2.png')";
+                player.style.backgroundImage = "url('PlayerSkin.png')";
 				isFacingLeft = true;
             }
 			break;
@@ -294,7 +321,7 @@ playButton.forEach(button => {
 	renderHearts();
 	horizontalPosition = 3.4; // Move player to the left edge
 	verticalPosition = 75.9; // Move player to ground level
-	loadLevel(0); // Load the first level
+	loadLevel(); // Load the first level
 	requestAnimationFrame(gameLoop); // Start the game loop
 	});
 });
@@ -499,8 +526,8 @@ function gameLoop() {
 	if (horizontalPosition >= 96.6) {
 		// Increment the level
 		if (document.querySelectorAll('.zombie').length === 0) {
-			currentLevel = (currentLevel + 1) % blockLevels.length; // Loop back to the first level if needed
-			loadLevel(currentLevel);
+			currentLevel += currentLevel; // Loop back to the first level if needed
+			loadLevel();
 			horizontalPosition = 3.4; // Move player to the left edge
 			verticalPosition = 75.9; // Move player to ground level
 		} else {
